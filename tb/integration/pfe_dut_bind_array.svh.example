@@ -1,0 +1,26 @@
+// Example only. Copy to pfe_dut_bind.svh and adapt the module/parameter/ports.
+// Define PFE_DUT_MODULE on the compile command line, for example:
+//   +define+PFE_DUT_MODULE=pfe_golden
+`ifndef PFE_DUT_MODULE
+  `define PFE_DUT_MODULE pfe_dut
+`endif
+
+`PFE_DUT_MODULE #(
+  .LANE_NUM(LANE_NUM)
+) u_dut (
+  .clk                    (bus.clk),
+  .rst_n                  (bus.rst_n),
+  .lane_pkt_in_vld        (bus.pkt_in_vld),
+  .lane_pkt_in_data       (bus.pkt_in_data),
+  .lane_pkt_in_ctrl       (bus.pkt_in_ctrl),
+  .pkt_in_bkpr            (bus.pkt_in_bkpr),
+  .lane_pkt_out_vld       (bus.pkt_out_vld),
+  .lane_pkt_out_data      (bus.pkt_out_data),
+  .fwd_pkt_data_vld       (bus.fwd_pkt_data_vld),
+  .fwd_pkt_data           (bus.fwd_pkt_data),
+  .fwd_pkt_lat            (bus.fwd_pkt_lat),
+  .fwd_pkt_dp_vld         (bus.fwd_pkt_dp_vld),
+  .fwd_pkt_dp_data        (bus.fwd_pkt_dp_data),
+  .fwded_pkt_data_vld     (bus.fwded_pkt_data_vld),
+  .fwded_pkt_data         (bus.fwded_pkt_data)
+);

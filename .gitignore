@@ -1,0 +1,11 @@
+/out/
+/csrc/
+/simv*
+/work/
+/xcelium.d/
+/*.log
+/*.vdb/
+/*.ucdb
+/tb/integration/pfe_dut_bind.svh
+__pycache__/
+*.pyc
