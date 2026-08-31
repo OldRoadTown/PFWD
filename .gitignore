@@ -9,3 +9,4 @@
 /tb/integration/pfe_dut_bind.svh
 __pycache__/
 *.pyc
+.DS_Store
