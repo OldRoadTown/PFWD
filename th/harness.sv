@@ -21,8 +21,6 @@ module harness;
   end
 
   initial begin
-    uvm_report_server server;
-    int unsigned failures;
 `ifndef PFE_USE_REAL_DATA_VIP
     $warning("Using open fallback data_caculate_vip; this is not a Golden RTL qualification run");
 `endif
@@ -33,12 +31,5 @@ module harness;
     // Each standalone tc file registers a class matching its basename. The
     // site regression selects it with +UVM_TESTNAME=<basename>.
     run_test();
-    // run_test returns after the standard UVM Report Summary. Keep the site
-    // pass marker last in the log, and never emit it after a UVM failure.
-    server = uvm_report_server::get_server();
-    failures = server.get_severity_count(UVM_ERROR) +
-               server.get_severity_count(UVM_FATAL);
-    if (failures == 0)
-      $display("PASSED");
   end
 endmodule
