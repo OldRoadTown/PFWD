@@ -7,6 +7,6 @@ BUNDLE_FILE="${BUNDLE_DIR}/PFWD_uvm_src.tar.gz"
 
 mkdir -p "${BUNDLE_DIR}"
 tar -C "${ROOT_DIR}" -czf "${BUNDLE_FILE}" \
-  env tc th sim/files.f docs/intranet.md
+  env tc th sim/files.f docs/intranet.md docs/bug-log.md
 
 echo "Created ${BUNDLE_FILE}"

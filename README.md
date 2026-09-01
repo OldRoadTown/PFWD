@@ -34,7 +34,7 @@ tc/                  UVM tests and the seed-free regression manifest
 th/                  harness and the single DUT integration seam
 tools/lint/          local syntax-only UVM surface; never compile in production
 scripts/             run, h_regress, packaging, performance comparison
-docs/                verification plan and internal porting checklist
+docs/                verification plan, bug log, and internal porting checklist
 ```
 
 The only simulation root is `harness` in `th/harness.sv`. The DUT module
@@ -114,6 +114,13 @@ python3 scripts/compare_perf.py \
 
 The command exits nonzero on a performance regression. Thresholds are command
 line options rather than hard-coded Golden values.
+
+## Issue tracking
+
+Record every injected DUT bug, verification-environment issue, coverage gap,
+and performance regression in [`docs/bug-log.md`](docs/bug-log.md). The log
+contains the current Golden baseline, the confirmed bug0 evidence, and the
+required template for subsequent iterations.
 
 ## Checks possible in this workspace
 
