@@ -68,5 +68,7 @@ class pfe_base_test extends uvm_test;
     if (failures != 0)
       $fatal(1, "PFE regression gate failed with %0d UVM error/fatal reports",
              failures);
+    else
+      $display("PASSED");
   endfunction
 endclass
