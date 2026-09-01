@@ -2,7 +2,7 @@ class pfe_input_monitor extends uvm_component;
   `uvm_component_utils(pfe_input_monitor)
 
   pfe_env_cfg cfg;
-  virtual pfe_if #(`PFE_LANE_NUM) vif;
+  virtual pfe_if vif;
   uvm_analysis_port #(pfe_packet) ap;
   longint unsigned next_seq;
 

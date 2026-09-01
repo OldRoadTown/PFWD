@@ -4,7 +4,7 @@
 module protocol_sva #(
   parameter int LANE_NUM    = `PFE_LANE_NUM,
   parameter int MAX_PROGRESS = 4096
-) (pfe_if #(LANE_NUM) vif);
+) (pfe_if vif);
 
   int unsigned output_cursor;
   int unsigned output_count;

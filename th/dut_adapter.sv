@@ -3,7 +3,7 @@
 
 module dut_adapter #(
   parameter int LANE_NUM = `PFE_LANE_NUM
-) (pfe_if #(LANE_NUM) bus);
+) (pfe_if bus);
 
 `ifdef PFE_REAL_DUT
   // This file is the only project-specific DUT integration seam. It must

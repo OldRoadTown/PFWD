@@ -3,7 +3,7 @@ class pfe_base_test extends uvm_test;
 
   pfe_env_cfg cfg;
   pfe_env env;
-  virtual pfe_if #(`PFE_LANE_NUM) vif;
+  virtual pfe_if vif;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -11,7 +11,7 @@ class pfe_base_test extends uvm_test;
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
-    if (!uvm_config_db#(virtual pfe_if #(`PFE_LANE_NUM))::get(
+    if (!uvm_config_db#(virtual pfe_if)::get(
           this, "", "vif", vif))
       `uvm_fatal("NO_VIF", "pfe_base_test did not receive pfe_if")
     cfg = pfe_env_cfg::type_id::create("cfg");

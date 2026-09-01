@@ -20,7 +20,8 @@ if [[ -z "${COVERAGE+x}" ]]; then
   if [[ "${LANE_NUM}" == "4" ]]; then COVERAGE=1; else COVERAGE=0; fi
 fi
 read -r -a EXTRA_PLUSARGS <<< "${SIM_PLUSARGS:-}"
-COMMON_PLUSARGS=("+PFE_TC_NAME=${TC}"
+COMMON_PLUSARGS=("+UVM_TESTNAME=${TC}"
+                 "+PFE_TC_NAME=${TC}"
                  "+PFE_PERF_FILE=${RUN_DIR}/pfe_perf.csv")
 
 if (( LANE_NUM < 3 || LANE_NUM > 7 )); then

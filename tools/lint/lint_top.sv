@@ -5,7 +5,7 @@
 module lint_top;
   logic clk = 1'b0;
   always #0.5ns clk = ~clk;
-  pfe_if #(`PFE_LANE_NUM) bus(clk);
+  pfe_if bus(clk);
   dut_adapter #(`PFE_LANE_NUM) adapter(bus);
   protocol_sva #(`PFE_LANE_NUM) assertions(bus);
 endmodule

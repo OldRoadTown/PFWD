@@ -5,8 +5,8 @@ import pfe_uvm_pkg::*;
 `include "uvm_macros.svh"
 localparam string TC_NAME = "reset";
 
-class pfe_test extends pfe_base_test;
-  `uvm_component_utils(pfe_test)
+class reset extends pfe_base_test;
+  `uvm_component_utils(reset)
   function new(string name, uvm_component parent); super.new(name, parent); endfunction
 
   task run_phase(uvm_phase phase);

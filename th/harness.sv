@@ -9,7 +9,7 @@ module harness;
   logic clk = 1'b0;
   always #0.5ns clk = ~clk;
 
-  pfe_if #(`PFE_LANE_NUM) pfe_vif(clk);
+  pfe_if pfe_vif(clk);
   dut_adapter #(`PFE_LANE_NUM) u_dut_adapter(pfe_vif);
   protocol_sva #(`PFE_LANE_NUM) u_protocol_sva(pfe_vif);
 
@@ -24,12 +24,12 @@ module harness;
 `ifndef PFE_USE_REAL_DATA_VIP
     $warning("Using open fallback data_caculate_vip; this is not a Golden RTL qualification run");
 `endif
-    uvm_config_db#(virtual pfe_if #(`PFE_LANE_NUM))::set(
+    uvm_config_db#(virtual pfe_if)::set(
       null, "uvm_test_top", "vif", pfe_vif);
     uvm_config_db#(string)::set(null, "*", "tc_name", TC_NAME);
     uvm_top.set_timeout(100us, 1'b0);
-    // Every standalone tc/*.sv registers the same fixed UVM class name.
-    // The intranet flow selects a case by compiling exactly one tc file.
-    run_test("pfe_test");
+    // Each standalone tc file registers a class matching its basename. The
+    // site regression selects it with +UVM_TESTNAME=<basename>.
+    run_test();
   end
 endmodule

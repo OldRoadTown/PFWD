@@ -1,5 +1,5 @@
 class pfe_env_cfg extends uvm_object;
-  virtual pfe_if #(`PFE_LANE_NUM) vif;
+  virtual pfe_if vif;
 
   int unsigned lane_num             = `PFE_LANE_NUM;
   int unsigned random_beats         = 200;

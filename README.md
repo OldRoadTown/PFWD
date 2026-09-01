@@ -42,8 +42,9 @@ The only simulation root is `harness` in `th/harness.sv`. The DUT module
 adapter is not a second simulation top. For an intranet submission, copy
 `env/`, `tc/`, and `th/`, then follow the compile order in `sim/files.f`.
 Compile exactly one standalone `tc/*.sv` per run, followed by `th/harness.sv`.
-Every case registers the fixed class `pfe_test`, so the harness needs no
-case-name argument. Do not copy `tools/lint/` into the production compile.
+Every case registers a class matching its file basename; select it with
+`+UVM_TESTNAME=<basename>`. Do not copy `tools/lint/` into the production
+compile.
 
 Create a minimal intranet transfer archive with:
 

@@ -2,7 +2,7 @@ class pfe_coverage extends uvm_component;
   `uvm_component_utils(pfe_coverage)
 
   pfe_env_cfg cfg;
-  virtual pfe_if #(`PFE_LANE_NUM) vif;
+  virtual pfe_if vif;
   uvm_analysis_imp_cov_pktin #(pfe_packet, pfe_coverage) pktin_imp;
   uvm_analysis_imp_cov_pktout #(pfe_out_packet, pfe_coverage) pktout_imp;
   uvm_analysis_imp_cov_reset #(pfe_reset_event, pfe_coverage) reset_imp;

@@ -5,8 +5,8 @@ import pfe_uvm_pkg::*;
 `include "uvm_macros.svh"
 localparam string TC_NAME = "output_wrap";
 
-class pfe_test extends pfe_base_test;
-  `uvm_component_utils(pfe_test)
+class output_wrap extends pfe_base_test;
+  `uvm_component_utils(output_wrap)
   function new(string name, uvm_component parent); super.new(name, parent); endfunction
   virtual function pfe_base_sequence create_main_sequence();
     return pfe_output_wrap_sequence::type_id::create("main_sequence");

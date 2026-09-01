@@ -24,10 +24,10 @@ tc/smoke.sv
 th/harness.sv
 ```
 
-Each standalone testcase defines `tc_pkg::pfe_test`. The harness always calls
-`run_test("pfe_test")`, so no parser, wrapper script, or `+UVM_TESTNAME` is
-required. Never compile two `tc/*.sv` files in the same run because they
-intentionally reuse the same package and class names.
+Each standalone testcase defines a `tc_pkg` class matching its file basename;
+for example, `tc/smoke.sv` defines `tc_pkg::smoke`. Select it with
+`+UVM_TESTNAME=smoke`. Never compile two `tc/*.sv` files in the same run because
+they intentionally reuse the same package name.
 
 The production compile also needs `+define+PFE_REAL_DUT`,
 `+define+PFE_USE_REAL_DATA_VIP`, the chosen `PFE_LANE_NUM`, and the encrypted

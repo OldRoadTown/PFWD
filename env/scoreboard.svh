@@ -2,7 +2,7 @@ class pfe_scoreboard extends uvm_component;
   `uvm_component_utils(pfe_scoreboard)
 
   pfe_env_cfg cfg;
-  virtual pfe_if #(`PFE_LANE_NUM) vif;
+  virtual pfe_if vif;
 
   uvm_analysis_imp_pktin #(pfe_packet, pfe_scoreboard) pktin_imp;
   uvm_analysis_imp_pktout #(pfe_out_packet, pfe_scoreboard) pktout_imp;

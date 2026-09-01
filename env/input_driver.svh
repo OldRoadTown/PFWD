@@ -2,7 +2,7 @@ class pfe_input_driver extends uvm_driver #(pfe_input_cycle_item);
   `uvm_component_utils(pfe_input_driver)
 
   pfe_env_cfg cfg;
-  virtual pfe_if #(`PFE_LANE_NUM) vif;
+  virtual pfe_if vif;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
