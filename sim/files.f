@@ -7,5 +7,6 @@ env/env_pkg.sv
 env/protocol_sva.sv
 th/dut_adapter.sv
 
-# After this filelist, compile exactly one tc/*.sv and then th/harness.sv.
-# Example order: -f sim/files.f tc/smoke.sv th/harness.sv
+# Compile th/harness.sv and exactly one tc/*.sv in the same build. The harness
+# selects the registered class by string and therefore does not depend on their
+# relative source order.

@@ -41,10 +41,10 @@ The only simulation root is `harness` in `th/harness.sv`. The DUT module
 `EXAM2021_TOP` is instantiated below it through `th/dut_adapter.sv`; the
 adapter is not a second simulation top. For an intranet submission, copy
 `env/`, `tc/`, and `th/`, then follow the compile order in `sim/files.f`.
-Compile exactly one standalone `tc/*.sv` per run, followed by `th/harness.sv`.
-Every case registers a class matching its file basename; select it with
-`+UVM_TESTNAME=<basename>`. Do not copy `tools/lint/` into the production
-compile.
+Compile exactly one standalone `tc/*.sv` plus `th/harness.sv` per run. Their
+relative order is immaterial because the harness selects the factory-registered
+test by its `+UVM_TESTNAME=<basename>` string and does not import `tc_pkg`.
+Do not copy `tools/lint/` into the production compile.
 
 Create a minimal intranet transfer archive with:
 

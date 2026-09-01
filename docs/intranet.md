@@ -17,12 +17,17 @@ tc/<exactly-one-case>.sv
 th/harness.sv
 ```
 
-For example, the smoke compilation ends with:
+For example, a smoke build contains both:
 
 ```text
 tc/smoke.sv
 th/harness.sv
 ```
+
+Their relative order is not significant. This permits a fixed `env.f` to
+contain `th/harness.sv` while `regress_list.py` appends the selected testcase.
+The harness reads `+UVM_TESTNAME` as a string and has no compile-time reference
+to `tc_pkg`.
 
 Each standalone testcase defines a `tc_pkg` class matching its file basename;
 for example, `tc/smoke.sv` defines `tc_pkg::smoke`. Select it with

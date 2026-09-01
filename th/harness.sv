@@ -4,7 +4,6 @@
 module harness;
   import uvm_pkg::*;
   import pfe_uvm_pkg::*;
-  import tc_pkg::*;
 
   logic clk = 1'b0;
   always #0.5ns clk = ~clk;
@@ -21,15 +20,18 @@ module harness;
   end
 
   initial begin
+    string test_name;
 `ifndef PFE_USE_REAL_DATA_VIP
     $warning("Using open fallback data_caculate_vip; this is not a Golden RTL qualification run");
 `endif
+    if (!$value$plusargs("UVM_TESTNAME=%s", test_name))
+      `uvm_fatal("NO_TEST", "+UVM_TESTNAME=<test class> is required")
     uvm_config_db#(virtual pfe_if)::set(
       null, "uvm_test_top", "vif", pfe_vif);
-    uvm_config_db#(string)::set(null, "*", "tc_name", TC_NAME);
+    uvm_config_db#(string)::set(null, "*", "tc_name", test_name);
     uvm_top.set_timeout(100us, 1'b0);
-    // Each standalone tc file registers a class matching its basename. The
-    // site regression selects it with +UVM_TESTNAME=<basename>.
-    run_test();
+    // Test selection is deliberately string-based, so harness has no compile
+    // order dependency on the standalone tc_pkg supplied by the regression.
+    run_test(test_name);
   end
 endmodule
