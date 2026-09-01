@@ -62,12 +62,17 @@ class pfe_base_test extends uvm_test;
     uvm_report_server server;
     int unsigned failures;
     super.final_phase(phase);
+    if (vif.sva_failure_count != 0)
+      `uvm_error("SVA_FAILURES",
+        $sformatf("%0d protocol assertion failure(s) were reported",
+                  vif.sva_failure_count))
     server = uvm_report_server::get_server();
     failures = server.get_severity_count(UVM_ERROR) +
                server.get_severity_count(UVM_FATAL);
     if (failures != 0)
-      $fatal(1, "PFE regression gate failed with %0d UVM error/fatal reports",
-             failures);
+      `uvm_fatal("PFE_GATE",
+        $sformatf("PFE regression gate failed with %0d UVM error/fatal reports",
+                  failures))
     else
       `uvm_info("PASSED", "PASSED", UVM_NONE)
   endfunction

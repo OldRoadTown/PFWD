@@ -34,6 +34,7 @@ Lane 3/5/6/7 databases must not be merged into this baseline.
 | ID | RTL | Class | Detection | Primary checker | Status |
 |---|---|---|---|---|---|
 | `DUT-BUG0` | `bug0` | Functional: unknown output control and no progress | `pkt_out_vld` remains X after reset; run eventually times out | `a_known_output_valids`, stimulus watchdog | `FOUND` |
+| `DUT-BUG3` | `bug3` | Functional: X/Z observed on output valid/control | Protocol assertion prints an X/Z failure; exact signal and trigger are pending waveform triage | `a_known_output_valids` | `FOUND` |
 
 ## DUT-BUG0: output valid remains unknown
 
@@ -97,6 +98,24 @@ proven and is not required for verification closure.
 - Fill in testcase, seed, and first-failure time from the internal run.
 - Continue with bug1 using coverage collection disabled.
 
+## DUT-BUG3: assertion detects X/Z but UVM initially reported zero errors
+
+### Observed behavior
+
+- The bug3 simulation log contains `PFE output valid/control contains X or Z`.
+- The same run originally ended with `UVM_ERROR : 0` because the assertion
+  action used SystemVerilog `$error`, which is outside the UVM report server.
+- Exact testcase, seed, first-failure time, and the first unknown signal remain
+  to be copied from the internal run.
+
+### Verdict and required rerun
+
+The protocol assertion has detected a functional interface failure in bug3.
+The zero UVM count was a reporting-integration defect (`ENV-004`), not evidence
+that bug3 passed. After the SVA-to-UVM bridge is installed, rerun the complete
+Golden regression first, then rerun the failing bug3 testcase. The corrected
+run must have a nonzero UVM error count and must not emit `PASSED`.
+
 ## Verification-environment issues
 
 | ID | Issue | Impact | Action | Status |
@@ -104,6 +123,7 @@ proven and is not required for verification closure.
 | `ENV-001` | Driver previously acknowledged a request before a low-backpressure acceptance edge | Packet-count mismatch and false Golden timeout | Retain/retry the same item until an actual low-BKPR edge | `FIXED` |
 | `ENV-002` | Standalone test packages were not all present in one compiled image | `Requested test ... not found` in h_regress | Compile `tc/tc_pkg.sv` once and select tests only with `+UVM_TESTNAME` | `FIXED` |
 | `ENV-003` | Harness imported `tc_pkg` and used package-local `TC_NAME` | Source-order-dependent compile failures | Read `+UVM_TESTNAME` as a string; remove compile-time testcase dependency | `FIXED` |
+| `ENV-004` | Protocol SVA action blocks and the final gate used SystemVerilog `$error`/`$fatal`, which are not counted by the UVM report server | Assertion failures could coexist with `UVM_ERROR : 0` and a false pass marker | Accumulate SVA failures in `pfe_if`, convert them to `uvm_error`, and use `uvm_fatal` for the final gate | `FIXED`, Golden rerun pending |
 | `ENV-COV-001` | `bkpr_cg.cp_streak.none` is declared, but the sampler currently records only nonzero streaks | A legal functional-coverage bin is unreachable | Sample zero on cycles with no active backpressure streak, then rerun Golden coverage | `OPEN` |
 
 ## Coverage-closure queue

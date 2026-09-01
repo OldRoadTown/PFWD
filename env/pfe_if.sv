@@ -17,6 +17,11 @@ interface pfe_if #(
   logic [LANE_NUM-1:0][DATA_W-1:0] pkt_out_data;
 
   longint unsigned cycle_count = 0;
+  longint unsigned sva_failure_count = 0;
+
+  function void note_sva_failure();
+    sva_failure_count++;
+  endfunction
 
   always @(posedge clk)
     cycle_count <= cycle_count + 1;

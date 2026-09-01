@@ -27,18 +27,27 @@ module protocol_sva #(
   a_reset_quiet: assert property (
     @(posedge vif.clk) !vif.rst_n |->
       (vif.pkt_out_vld == '0)
-  ) else $error("PFE reset outputs are not quiet");
+  ) else begin
+    vif.note_sva_failure();
+    $error("PFE reset outputs are not quiet");
+  end
 
   a_output_lane_rotation: assert property (
     @(posedge vif.clk) disable iff (!vif.rst_n)
       (vif.pkt_out_vld != '0) |->
         (vif.pkt_out_vld == expected_output_mask)
-  ) else $error("PFE PKTOUT lane rotation violation");
+  ) else begin
+    vif.note_sva_failure();
+    $error("PFE PKTOUT lane rotation violation");
+  end
 
   a_known_output_valids: assert property (
     @(posedge vif.clk) disable iff (!vif.rst_n)
       !$isunknown({vif.pkt_in_bkpr, vif.pkt_out_vld})
-  ) else $error("PFE output valid/control contains X or Z");
+  ) else begin
+    vif.note_sva_failure();
+    $error("PFE output valid/control contains X or Z");
+  end
 
   generate
     for (genvar lane = 0; lane < LANE_NUM; lane++) begin : g_lane_sva
@@ -46,12 +55,18 @@ module protocol_sva #(
         @(posedge vif.clk) disable iff (!vif.rst_n)
           (vif.pkt_in_vld[lane] && !vif.pkt_in_bkpr) |->
             !$isunknown({vif.pkt_in_data[lane], vif.pkt_in_ctrl[lane]})
-      ) else $error("PKTIN lane %0d contains X/Z", lane);
+      ) else begin
+        vif.note_sva_failure();
+        $error("PKTIN lane %0d contains X/Z", lane);
+      end
 
       a_output_data_known: assert property (
         @(posedge vif.clk) disable iff (!vif.rst_n)
           vif.pkt_out_vld[lane] |-> !$isunknown(vif.pkt_out_data[lane])
-      ) else $error("PKTOUT lane %0d contains X/Z", lane);
+      ) else begin
+        vif.note_sva_failure();
+        $error("PKTOUT lane %0d contains X/Z", lane);
+      end
 
       c_lane_input: cover property (
         @(posedge vif.clk) disable iff (!vif.rst_n)
@@ -79,8 +94,11 @@ module protocol_sva #(
     @(posedge vif.clk) disable iff (!vif.rst_n)
       ((|vif.pkt_in_vld) && !vif.pkt_in_bkpr) |->
         ##[1:MAX_PROGRESS] (|vif.pkt_out_vld)
-  ) else $error("PFE made no visible PKTOUT progress within %0d cycles",
-                MAX_PROGRESS);
+  ) else begin
+    vif.note_sva_failure();
+    $error("PFE made no visible PKTOUT progress within %0d cycles",
+           MAX_PROGRESS);
+  end
 
   c_idle_gap: cover property (
     @(posedge vif.clk) disable iff (!vif.rst_n)
