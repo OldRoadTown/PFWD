@@ -1,10 +1,13 @@
 `timescale 1ns/1ps
 `include "defines.svh"
+`include "uvm_macros.svh"
 
 module protocol_sva #(
   parameter int LANE_NUM    = `PFE_LANE_NUM,
   parameter int MAX_PROGRESS = 4096
 ) (pfe_if vif);
+
+  import uvm_pkg::*;
 
   int unsigned output_cursor;
   int unsigned output_count;
@@ -29,7 +32,7 @@ module protocol_sva #(
       (vif.pkt_out_vld == '0)
   ) else begin
     vif.note_sva_failure();
-    $error("PFE reset outputs are not quiet");
+    `uvm_error("PFE_SVA_RESET", "PFE reset outputs are not quiet")
   end
 
   a_output_lane_rotation: assert property (
@@ -38,7 +41,7 @@ module protocol_sva #(
         (vif.pkt_out_vld == expected_output_mask)
   ) else begin
     vif.note_sva_failure();
-    $error("PFE PKTOUT lane rotation violation");
+    `uvm_error("PFE_SVA_ORDER", "PFE PKTOUT lane rotation violation")
   end
 
   a_known_output_valids: assert property (
@@ -46,7 +49,9 @@ module protocol_sva #(
       !$isunknown({vif.pkt_in_bkpr, vif.pkt_out_vld})
   ) else begin
     vif.note_sva_failure();
-    $error("PFE output valid/control contains X or Z");
+    `uvm_error("PFE_SVA_CTRL_X",
+      $sformatf("PFE output valid/control contains X or Z: bkpr=%b out_vld=%b",
+                vif.pkt_in_bkpr, vif.pkt_out_vld))
   end
 
   generate
@@ -57,7 +62,8 @@ module protocol_sva #(
             !$isunknown({vif.pkt_in_data[lane], vif.pkt_in_ctrl[lane]})
       ) else begin
         vif.note_sva_failure();
-        $error("PKTIN lane %0d contains X/Z", lane);
+        `uvm_error("PFE_SVA_PKTIN_X",
+          $sformatf("PKTIN lane %0d contains X/Z", lane))
       end
 
       a_output_data_known: assert property (
@@ -65,7 +71,8 @@ module protocol_sva #(
           vif.pkt_out_vld[lane] |-> !$isunknown(vif.pkt_out_data[lane])
       ) else begin
         vif.note_sva_failure();
-        $error("PKTOUT lane %0d contains X/Z", lane);
+        `uvm_error("PFE_SVA_PKTOUT_X",
+          $sformatf("PKTOUT lane %0d contains X/Z", lane))
       end
 
       c_lane_input: cover property (
@@ -96,8 +103,9 @@ module protocol_sva #(
         ##[1:MAX_PROGRESS] (|vif.pkt_out_vld)
   ) else begin
     vif.note_sva_failure();
-    $error("PFE made no visible PKTOUT progress within %0d cycles",
-           MAX_PROGRESS);
+    `uvm_error("PFE_SVA_PROGRESS",
+      $sformatf("PFE made no visible PKTOUT progress within %0d cycles",
+                MAX_PROGRESS))
   end
 
   c_idle_gap: cover property (

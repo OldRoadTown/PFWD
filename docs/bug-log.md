@@ -35,6 +35,7 @@ Lane 3/5/6/7 databases must not be merged into this baseline.
 |---|---|---|---|---|---|
 | `DUT-BUG0` | `bug0` | Functional: unknown output control and no progress | `pkt_out_vld` remains X after reset; run eventually times out | `a_known_output_valids`, stimulus watchdog | `FOUND` |
 | `DUT-BUG3` | `bug3` | Functional: X/Z observed on output valid/control | Protocol assertion prints an X/Z failure; exact signal and trigger are pending waveform triage | `a_known_output_valids` | `FOUND` |
+| `DUT-BUG10` | `bug10` | Pending classification: same output valid/control X/Z checker fired | Must first prove bug10 used a clean, unique RTL build rather than a cached bug3 image | `a_known_output_valids` | `OPEN` |
 
 ## DUT-BUG0: output valid remains unknown
 
@@ -116,6 +117,17 @@ that bug3 passed. After the SVA-to-UVM bridge is installed, rerun the complete
 Golden regression first, then rerun the failing bug3 testcase. The corrected
 run must have a nonzero UVM error count and must not emit `PASSED`.
 
+## DUT-BUG10: same X/Z checker as bug3
+
+Bug10 currently fires the same `a_known_output_valids` assertion as bug3. This
+is possible for two independent internal defects because different reset,
+queue-valid, scheduler, or port-driver failures can converge on the same
+black-box symptom. Before marking bug10 `FOUND`, use a clean build directory,
+confirm `compile.log` references only the bug10 RTL filelist, and compare its
+first-failure time and output-valid bit pattern with bug3 under the same
+reproduction seed. Bit-for-bit identical runs indicate a likely stale/cached
+RTL image; distinct traces with the same checker can represent separate bugs.
+
 ## Verification-environment issues
 
 | ID | Issue | Impact | Action | Status |
@@ -123,7 +135,7 @@ run must have a nonzero UVM error count and must not emit `PASSED`.
 | `ENV-001` | Driver previously acknowledged a request before a low-backpressure acceptance edge | Packet-count mismatch and false Golden timeout | Retain/retry the same item until an actual low-BKPR edge | `FIXED` |
 | `ENV-002` | Standalone test packages were not all present in one compiled image | `Requested test ... not found` in h_regress | Compile `tc/tc_pkg.sv` once and select tests only with `+UVM_TESTNAME` | `FIXED` |
 | `ENV-003` | Harness imported `tc_pkg` and used package-local `TC_NAME` | Source-order-dependent compile failures | Read `+UVM_TESTNAME` as a string; remove compile-time testcase dependency | `FIXED` |
-| `ENV-004` | Protocol SVA action blocks and the final gate used SystemVerilog `$error`/`$fatal`, which are not counted by the UVM report server | Assertion failures could coexist with `UVM_ERROR : 0` and a false pass marker | Accumulate SVA failures in `pfe_if`, convert them to `uvm_error`, and use `uvm_fatal` for the final gate | `FIXED`, Golden rerun pending |
+| `ENV-004` | Protocol SVA action blocks and the final gate used SystemVerilog `$error`/`$fatal`, which are not counted by the UVM report server | Assertion failures could coexist with `UVM_ERROR : 0` and a false pass marker; a fatal timeout could bypass `final_phase` aggregation | Report `uvm_error` directly in each SVA action, retain the interface counter as a fallback, and use `uvm_fatal` for the final gate | `FIXED`, Golden rerun pending |
 | `ENV-COV-001` | `bkpr_cg.cp_streak.none` is declared, but the sampler currently records only nonzero streaks | A legal functional-coverage bin is unreachable | Sample zero on cycles with no active backpressure streak, then rerun Golden coverage | `OPEN` |
 
 ## Coverage-closure queue

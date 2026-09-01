@@ -11,9 +11,9 @@ lint: lint-rtl lint-bind lint-uvm
 lint-rtl:
 	verilator --lint-only --timing --assert -Wall -Wno-fatal \
 		-Wno-PROCASSINIT -Wno-UNUSEDSIGNAL -Wno-SYNCASYNCNET \
-		-Ienv -Ith \
+		-Itools/lint -Ienv -Ith \
 		--top-module lint_top \
-		env/pfe_if.sv env/protocol_sva.sv \
+		tools/lint/uvm_pkg.sv env/pfe_if.sv env/protocol_sva.sv \
 		th/dut_adapter.sv tools/lint/lint_top.sv
 
 lint-bind:
@@ -22,7 +22,7 @@ lint-bind:
 		-Wno-SYNCASYNCNET -DPFE_REAL_DUT -DPFE_LANE_NUM=4 \
 		-DLANE_WIDTH=3:0 -Ienv -Ith -Itools/lint \
 		--top-module lint_top tools/lint/EXAM2021_TOP.sv \
-		env/pfe_if.sv env/protocol_sva.sv th/dut_adapter.sv \
+		tools/lint/uvm_pkg.sv env/pfe_if.sv env/protocol_sva.sv th/dut_adapter.sv \
 		tools/lint/lint_top.sv
 
 lint-uvm:

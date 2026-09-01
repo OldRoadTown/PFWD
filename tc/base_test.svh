@@ -62,11 +62,13 @@ class pfe_base_test extends uvm_test;
     uvm_report_server server;
     int unsigned failures;
     super.final_phase(phase);
-    if (vif.sva_failure_count != 0)
+    server = uvm_report_server::get_server();
+    if (vif.sva_failure_count != 0 &&
+        server.get_severity_count(UVM_ERROR) == 0 &&
+        server.get_severity_count(UVM_FATAL) == 0)
       `uvm_error("SVA_FAILURES",
         $sformatf("%0d protocol assertion failure(s) were reported",
                   vif.sva_failure_count))
-    server = uvm_report_server::get_server();
     failures = server.get_severity_count(UVM_ERROR) +
                server.get_severity_count(UVM_FATAL);
     if (failures != 0)
