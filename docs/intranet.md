@@ -13,26 +13,22 @@ env/pfe_if.sv
 env/env_pkg.sv
 env/protocol_sva.sv
 th/dut_adapter.sv
-tc/<exactly-one-case>.sv
+tc/tc_pkg.sv
 th/harness.sv
 ```
 
-For example, a smoke build contains both:
+`tc/tc_pkg.sv` includes all testcase class bodies and registers them with the
+UVM factory. Compile it once and select the required class at runtime:
 
 ```text
-tc/smoke.sv
-th/harness.sv
++UVM_TESTNAME=smoke
++UVM_TESTNAME=latency
++UVM_TESTNAME=dep_chain
 ```
 
-Their relative order is not significant. This permits a fixed `env.f` to
-contain `th/harness.sv` while `regress_list.py` appends the selected testcase.
-The harness reads `+UVM_TESTNAME` as a string and has no compile-time reference
-to `tc_pkg`.
-
-Each standalone testcase defines a `tc_pkg` class matching its file basename;
-for example, `tc/smoke.sv` defines `tc_pkg::smoke`. Select it with
-`+UVM_TESTNAME=smoke`. Never compile two `tc/*.sv` files in the same run because
-they intentionally reuse the same package name.
+Do not add `tc/smoke.sv`, `tc/latency.sv`, or any other included class-body
+file to `env.f` or to an individual regression job. Those files are source
+includes owned by `tc/tc_pkg.sv`, not independent compilation units.
 
 The production compile also needs `+define+PFE_REAL_DUT`,
 `+define+PFE_USE_REAL_DATA_VIP`, the chosen `PFE_LANE_NUM`, and the encrypted
@@ -57,8 +53,8 @@ VIP.
 7. Confirm reset requires PKTOUT valids to be zero. Adjust only the
    reset assertion if the Golden contract explicitly differs.
 8. Map each row in `tc/testlist.csv` into the site's fixed h_regress schema.
-    Select the file in the `tc_file` column as that run's only testcase source.
-    Do not add a fixed seed column.
+    Pass the `uvm_test` value through `+UVM_TESTNAME`; every row uses the same
+    compiled `tc/tc_pkg.sv`. Do not add a fixed seed column.
 9. Verify assertion enable and assertion-coverage switches in the internal
    simulator log before accepting a coverage result.
 

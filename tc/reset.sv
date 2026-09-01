@@ -1,10 +1,3 @@
-`timescale 1ns/1ps
-package tc_pkg;
-import uvm_pkg::*;
-import pfe_uvm_pkg::*;
-`include "uvm_macros.svh"
-localparam string TC_NAME = "reset";
-
 class reset extends pfe_base_test;
   `uvm_component_utils(reset)
   function new(string name, uvm_component parent); super.new(name, parent); endfunction
@@ -31,4 +24,3 @@ class reset extends pfe_base_test;
     phase.drop_objection(this);
   endtask
 endclass
-endpackage

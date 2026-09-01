@@ -33,7 +33,7 @@ lint-uvm:
 		-Itools/lint -Ienv -Itc -Ith \
 		--top-module harness \
 		env/pfe_if.sv tools/lint/uvm_pkg.sv \
-		env/env_pkg.sv env/protocol_sva.sv tc/$(TC).sv \
+		env/env_pkg.sv env/protocol_sva.sv tc/tc_pkg.sv \
 		th/dut_adapter.sv th/harness.sv
 
 lint-topologies:
@@ -45,7 +45,7 @@ lint-topologies:
 			-Wno-SYNCASYNCNET -Wno-IMPURE -DPFE_LANE_NUM=$$lane \
 			-Itools/lint -Ienv -Itc -Ith --top-module harness \
 			env/pfe_if.sv tools/lint/uvm_pkg.sv \
-			env/env_pkg.sv env/protocol_sva.sv tc/smoke.sv \
+			env/env_pkg.sv env/protocol_sva.sv tc/tc_pkg.sv \
 			th/dut_adapter.sv th/harness.sv || exit $$?; \
 	done
 

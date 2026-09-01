@@ -5,13 +5,11 @@ set -euo pipefail
 # The variable aliases cover common scheduler naming conventions without
 # placing a fixed seed in the checked-in regression manifest.
 export TC="${TC:-${HREG_TC:-smoke}}"
-export TC_FILE="${TC_FILE:-${HREG_TC_FILE:-}}"
 export LANE_NUM="${LANE_NUM:-${HREG_LANE_NUM:-4}}"
 export RTL_KIND="${RTL_KIND:-${HREG_RTL_KIND:-candidate}}"
 export COVERAGE="${COVERAGE:-${HREG_COVERAGE:-}}"
 export SEED="${SEED:-${HREG_SEED:-}}"
 if [[ -z "${SEED}" ]]; then unset SEED; fi
 if [[ -z "${COVERAGE}" ]]; then unset COVERAGE; fi
-if [[ -z "${TC_FILE}" ]]; then unset TC_FILE; fi
 
 exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/run_test.sh"

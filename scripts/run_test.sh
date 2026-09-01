@@ -5,11 +5,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SIM="${SIM:-vcs}"
 LANE_NUM="${LANE_NUM:-4}"
 TC="${TC:-smoke}"
-TC_FILE="${TC_FILE:-${ROOT_DIR}/tc/${TC}.sv}"
+TC_SOURCE="${ROOT_DIR}/tc/${TC}.sv"
 SEED="${SEED:-$(( ( $(date +%s) ^ $$ ^ RANDOM ) & 0x7fffffff ))}"
 RTL_KIND="${RTL_KIND:-candidate}"
 RESULTS_ROOT="${RESULTS_ROOT:-${ROOT_DIR}/out}"
-BUILD_DIR="${BUILD_DIR:-${RESULTS_ROOT}/build/${SIM}/${RTL_KIND}/lane${LANE_NUM}/${TC}}"
+BUILD_DIR="${BUILD_DIR:-${RESULTS_ROOT}/build/${SIM}/${RTL_KIND}/lane${LANE_NUM}/all_tests}"
 RUN_DIR="${RUN_DIR:-${RESULTS_ROOT}/runs/${RTL_KIND}/lane${LANE_NUM}/${TC}/seed_${SEED}}"
 REAL_DUT="${REAL_DUT:-1}"
 USE_REAL_VIP="${USE_REAL_VIP:-1}"
@@ -29,8 +29,8 @@ if (( LANE_NUM < 3 || LANE_NUM > 7 )); then
   exit 2
 fi
 
-if [[ ! -f "${TC_FILE}" ]]; then
-  echo "TC_FILE=${TC_FILE} does not exist" >&2
+if [[ ! -f "${TC_SOURCE}" ]]; then
+  echo "UVM test source ${TC_SOURCE} does not exist" >&2
   exit 2
 fi
 
@@ -70,7 +70,7 @@ elif [[ "${REAL_DUT}" == "1" ]]; then
   exit 2
 fi
 
-echo "PFE_RUN sim=${SIM} rtl=${RTL_KIND} lanes=${LANE_NUM} tc=${TC_FILE} seed=${SEED}"
+echo "PFE_RUN sim=${SIM} rtl=${RTL_KIND} lanes=${LANE_NUM} tc=${TC} seed=${SEED}"
 echo "PFE_RUN_DIR ${RUN_DIR}"
 
 cd "${ROOT_DIR}"
@@ -90,7 +90,7 @@ compile_vcs() {
   run_limited vcs -full64 -sverilog -ntb_opts uvm-1.2 -timescale=1ns/1ps \
     -assert enable_diag -cm assert+branch+cond+fsm+line+tgl \
     "${DEFINES[@]}" "${INCDIRS[@]}" "${EXTRA_FILES[@]}" \
-    -f sim/files.f "${TC_FILE}" th/harness.sv -Mdir="${BUILD_DIR}/csrc" \
+    -f sim/files.f th/harness.sv -Mdir="${BUILD_DIR}/csrc" \
     -o "${BUILD_DIR}/simv" -l "${BUILD_DIR}/compile.log"
 }
 
@@ -109,7 +109,7 @@ compile_xrun() {
   run_limited xrun -64bit -uvm -sv -compile -timescale 1ns/1ps \
     -assert -coverage all -xmlibdirname "${BUILD_DIR}/xcelium.d" \
     "${DEFINES[@]}" "${INCDIRS[@]}" "${EXTRA_FILES[@]}" \
-    -f sim/files.f "${TC_FILE}" th/harness.sv -l "${BUILD_DIR}/compile.log"
+    -f sim/files.f th/harness.sv -l "${BUILD_DIR}/compile.log"
 }
 
 run_xrun() {
@@ -128,7 +128,7 @@ compile_questa() {
   run_limited vlib "${BUILD_DIR}/work"
   run_limited vlog -64 -sv -mfcu -work "${BUILD_DIR}/work" +cover=sbecft \
     "${DEFINES[@]}" "${INCDIRS[@]}" "${EXTRA_FILES[@]}" \
-    -f sim/files.f "${TC_FILE}" th/harness.sv -l "${BUILD_DIR}/compile.log"
+    -f sim/files.f th/harness.sv -l "${BUILD_DIR}/compile.log"
 }
 
 run_questa() {
