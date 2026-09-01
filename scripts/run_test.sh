@@ -4,12 +4,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SIM="${SIM:-vcs}"
 LANE_NUM="${LANE_NUM:-4}"
-TEST="${TEST:-pfe_smoke_test}"
+TC="${TC:-smoke}"
+TC_FILE="${TC_FILE:-${ROOT_DIR}/tc/${TC}.sv}"
 SEED="${SEED:-$(( ( $(date +%s) ^ $$ ^ RANDOM ) & 0x7fffffff ))}"
 RTL_KIND="${RTL_KIND:-candidate}"
 RESULTS_ROOT="${RESULTS_ROOT:-${ROOT_DIR}/out}"
-BUILD_DIR="${BUILD_DIR:-${RESULTS_ROOT}/build/${SIM}/${RTL_KIND}/lane${LANE_NUM}}"
-RUN_DIR="${RUN_DIR:-${RESULTS_ROOT}/runs/${RTL_KIND}/lane${LANE_NUM}/${TEST}/seed_${SEED}}"
+BUILD_DIR="${BUILD_DIR:-${RESULTS_ROOT}/build/${SIM}/${RTL_KIND}/lane${LANE_NUM}/${TC}}"
+RUN_DIR="${RUN_DIR:-${RESULTS_ROOT}/runs/${RTL_KIND}/lane${LANE_NUM}/${TC}/seed_${SEED}}"
 REAL_DUT="${REAL_DUT:-1}"
 USE_REAL_VIP="${USE_REAL_VIP:-1}"
 FORCE_COMPILE="${FORCE_COMPILE:-0}"
@@ -19,11 +20,16 @@ if [[ -z "${COVERAGE+x}" ]]; then
   if [[ "${LANE_NUM}" == "4" ]]; then COVERAGE=1; else COVERAGE=0; fi
 fi
 read -r -a EXTRA_PLUSARGS <<< "${SIM_PLUSARGS:-}"
-COMMON_PLUSARGS=("+UVM_TESTNAME=${TEST}"
+COMMON_PLUSARGS=("+PFE_TC_NAME=${TC}"
                  "+PFE_PERF_FILE=${RUN_DIR}/pfe_perf.csv")
 
 if (( LANE_NUM < 3 || LANE_NUM > 7 )); then
   echo "LANE_NUM must be in [3:7]" >&2
+  exit 2
+fi
+
+if [[ ! -f "${TC_FILE}" ]]; then
+  echo "TC_FILE=${TC_FILE} does not exist" >&2
   exit 2
 fi
 
@@ -35,31 +41,12 @@ EXTRA_FILES=()
 
 if [[ "${REAL_DUT}" == "1" ]]; then
   DEFINES+=("+define+PFE_REAL_DUT")
-  if [[ "${DUT_PORT_STYLE:-}" == "flat" ]]; then
-    if [[ -z "${DUT_MODULE:-}" ]]; then
-      echo "DUT_MODULE is required when DUT_PORT_STYLE=flat" >&2
-      exit 2
-    fi
-    GENERATED_DIR="${BUILD_DIR}/generated"
-    GEN_ARGS=(--module "${DUT_MODULE}" --lanes "${LANE_NUM}"
-              --output "${GENERATED_DIR}/pfe_dut_bind.svh")
-    if [[ "${DUT_HAS_LANE_PARAM:-1}" == "0" ]]; then
-      GEN_ARGS+=(--no-lane-param)
-    else
-      GEN_ARGS+=(--lane-param "${DUT_LANE_PARAM:-LANE_NUM}")
-    fi
-    python3 "${ROOT_DIR}/scripts/gen_flat_bind.py" "${GEN_ARGS[@]}"
-    INCDIRS+=("+incdir+${GENERATED_DIR}")
-  elif [[ -n "${DUT_BIND_DIR:-}" ]]; then
-    if [[ ! -f "${DUT_BIND_DIR}/pfe_dut_bind.svh" ]]; then
-      echo "${DUT_BIND_DIR}/pfe_dut_bind.svh is missing" >&2
-      exit 2
-    fi
-    INCDIRS+=("+incdir+${DUT_BIND_DIR}")
-  else
-    echo "Set DUT_PORT_STYLE=flat or DUT_BIND_DIR for a real DUT run" >&2
+  DUT_BIND_DIR="${DUT_BIND_DIR:-${ROOT_DIR}/th}"
+  if [[ ! -f "${DUT_BIND_DIR}/dut_bind.svh" ]]; then
+    echo "${DUT_BIND_DIR}/dut_bind.svh is missing" >&2
     exit 2
   fi
+  INCDIRS+=("+incdir+${DUT_BIND_DIR}")
 fi
 
 if [[ "${USE_REAL_VIP}" == "1" ]]; then
@@ -82,7 +69,7 @@ elif [[ "${REAL_DUT}" == "1" ]]; then
   exit 2
 fi
 
-echo "PFE_RUN sim=${SIM} rtl=${RTL_KIND} lanes=${LANE_NUM} test=${TEST} seed=${SEED}"
+echo "PFE_RUN sim=${SIM} rtl=${RTL_KIND} lanes=${LANE_NUM} tc=${TC_FILE} seed=${SEED}"
 echo "PFE_RUN_DIR ${RUN_DIR}"
 
 cd "${ROOT_DIR}"
@@ -102,7 +89,7 @@ compile_vcs() {
   run_limited vcs -full64 -sverilog -ntb_opts uvm-1.2 -timescale=1ns/1ps \
     -assert enable_diag -cm assert+branch+cond+fsm+line+tgl \
     "${DEFINES[@]}" "${INCDIRS[@]}" "${EXTRA_FILES[@]}" \
-    -f sim/files.f -Mdir="${BUILD_DIR}/csrc" \
+    -f sim/files.f "${TC_FILE}" th/harness.sv -Mdir="${BUILD_DIR}/csrc" \
     -o "${BUILD_DIR}/simv" -l "${BUILD_DIR}/compile.log"
 }
 
@@ -121,13 +108,13 @@ compile_xrun() {
   run_limited xrun -64bit -uvm -sv -compile -timescale 1ns/1ps \
     -assert -coverage all -xmlibdirname "${BUILD_DIR}/xcelium.d" \
     "${DEFINES[@]}" "${INCDIRS[@]}" "${EXTRA_FILES[@]}" \
-    -f sim/files.f -l "${BUILD_DIR}/compile.log"
+    -f sim/files.f "${TC_FILE}" th/harness.sv -l "${BUILD_DIR}/compile.log"
 }
 
 run_xrun() {
   local cov_args=()
   if [[ "${COVERAGE}" == "1" ]]; then
-    cov_args=(-coverage all -covtest "${TEST}_${SEED}" -covworkdir "${RUN_DIR}/cov")
+    cov_args=(-coverage all -covtest "${TC}_${SEED}" -covworkdir "${RUN_DIR}/cov")
   fi
   run_limited /usr/bin/time -p xrun -64bit -R -xmlibdirname "${BUILD_DIR}/xcelium.d" \
     -svseed "${SEED}" "${COMMON_PLUSARGS[@]}" \
@@ -140,12 +127,12 @@ compile_questa() {
   run_limited vlib "${BUILD_DIR}/work"
   run_limited vlog -64 -sv -mfcu -work "${BUILD_DIR}/work" +cover=sbecft \
     "${DEFINES[@]}" "${INCDIRS[@]}" "${EXTRA_FILES[@]}" \
-    -f sim/files.f -l "${BUILD_DIR}/compile.log"
+    -f sim/files.f "${TC_FILE}" th/harness.sv -l "${BUILD_DIR}/compile.log"
 }
 
 run_questa() {
   run_limited /usr/bin/time -p vsim -64 -c -coverage -assertcover \
-    -work "${BUILD_DIR}/work" -sv_seed "${SEED}" pfe_tb_top \
+    -work "${BUILD_DIR}/work" -sv_seed "${SEED}" harness \
     "${COMMON_PLUSARGS[@]}" \
     "${EXTRA_PLUSARGS[@]}" \
     -do "run -all; coverage save -assert -codeAll ${RUN_DIR}/coverage.ucdb; quit -f" \
@@ -171,4 +158,4 @@ case "${SIM}" in
     ;;
 esac
 
-echo "PFE_PASS lanes=${LANE_NUM} test=${TEST} seed=${SEED}"
+echo "PFE_PASS lanes=${LANE_NUM} tc=${TC} seed=${SEED}"

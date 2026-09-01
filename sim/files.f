@@ -1,17 +1,11 @@
-+incdir+tb
-+incdir+tb/interfaces
-+incdir+tb/pkg
-+incdir+tb/agents
-+incdir+tb/env
-+incdir+tb/seq
-+incdir+tb/tests
-+incdir+tb/sva
-+incdir+tb/top
-+incdir+tb/integration
-+incdir+tb/vip
++incdir+env
++incdir+tc
++incdir+th
 
-tb/interfaces/pfe_if.sv
-tb/pkg/pfe_uvm_pkg.sv
-tb/sva/pfe_protocol_sva.sv
-tb/top/pfe_dut_adapter.sv
-tb/top/pfe_tb_top.sv
+env/pfe_if.sv
+env/env_pkg.sv
+env/protocol_sva.sv
+th/dut_adapter.sv
+
+# After this filelist, compile exactly one tc/*.sv and then th/harness.sv.
+# Example order: -f sim/files.f tc/smoke.sv th/harness.sv

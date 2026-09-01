@@ -10,10 +10,10 @@ fi
 
 # h_regress is site-specific. H_REGRESS_ARGS must point it at a site config
 # whose case command is scripts/h_regress_case.sh and whose matrix comes from
-# regress/pfe_regress.csv. No seed is supplied by this repository.
+# tc/testlist.csv. No seed is supplied by this repository.
 if [[ -z "${H_REGRESS_ARGS:-}" ]]; then
   echo "Set H_REGRESS_ARGS to the internal h_regress configuration arguments." >&2
-  echo "Manifest: ${ROOT_DIR}/regress/pfe_regress.csv" >&2
+  echo "Manifest: ${ROOT_DIR}/tc/testlist.csv" >&2
   exit 2
 fi
 

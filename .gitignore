@@ -6,7 +6,7 @@
 /*.log
 /*.vdb/
 /*.ucdb
-/tb/integration/pfe_dut_bind.svh
+/th/dut_bind.svh
 __pycache__/
 *.pyc
 .DS_Store

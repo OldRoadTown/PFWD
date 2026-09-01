@@ -11,7 +11,7 @@ import statistics
 from pathlib import Path
 
 
-METRICS = ("throughput", "avg_dispatch", "avg_e2e", "bkpr_ratio", "max_bkpr")
+METRICS = ("throughput", "avg_e2e", "bkpr_ratio", "max_bkpr", "out_util")
 
 
 def load(patterns: list[str]) -> list[dict[str, float]]:
@@ -39,6 +39,7 @@ def main() -> int:
     parser.add_argument("--golden", nargs="+", required=True, help="CSV paths/globs")
     parser.add_argument("--candidate", nargs="+", required=True, help="CSV paths/globs")
     parser.add_argument("--min-throughput-ratio", type=float, default=0.90)
+    parser.add_argument("--min-output-util-ratio", type=float, default=0.90)
     parser.add_argument("--max-latency-ratio", type=float, default=1.10)
     parser.add_argument("--max-bkpr-delta", type=float, default=0.05)
     parser.add_argument("--report", type=Path)
@@ -52,11 +53,10 @@ def main() -> int:
             >= golden["throughput"] * args.min_throughput_ratio,
             "minimum": golden["throughput"] * args.min_throughput_ratio,
         },
-        "avg_dispatch": {
-            "pass": golden["avg_dispatch"] == 0
-            or candidate["avg_dispatch"]
-            <= golden["avg_dispatch"] * args.max_latency_ratio,
-            "maximum": golden["avg_dispatch"] * args.max_latency_ratio,
+        "out_util": {
+            "pass": candidate["out_util"]
+            >= golden["out_util"] * args.min_output_util_ratio,
+            "minimum": golden["out_util"] * args.min_output_util_ratio,
         },
         "avg_e2e": {
             "pass": golden["avg_e2e"] == 0

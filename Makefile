@@ -1,33 +1,40 @@
 SHELL := /bin/bash
 
-.PHONY: lint lint-rtl lint-uvm lint-topologies smoke regress gen-bind perf-compare summarize clean
+.PHONY: lint lint-rtl lint-bind lint-uvm lint-topologies smoke regress bundle perf-compare summarize clean
 
 LANE_NUM ?= 4
-TEST ?= pfe_smoke_test
+TC ?= smoke
 SIM ?= vcs
 
-lint: lint-rtl lint-uvm
+lint: lint-rtl lint-bind lint-uvm
 
 lint-rtl:
 	verilator --lint-only --timing --assert -Wall -Wno-fatal \
 		-Wno-PROCASSINIT -Wno-UNUSEDSIGNAL -Wno-SYNCASYNCNET \
-		-Itb -Itb/interfaces -Itb/integration \
-		--top-module pfe_lint_top \
-		tb/interfaces/pfe_if.sv tb/sva/pfe_protocol_sva.sv \
-		tb/top/pfe_dut_adapter.sv \
-		tb/top/pfe_lint_top.sv
+		-Ienv -Ith \
+		--top-module lint_top \
+		env/pfe_if.sv env/protocol_sva.sv \
+		th/dut_adapter.sv tools/lint/lint_top.sv
+
+lint-bind:
+	verilator --lint-only --timing --assert -Wall -Wno-fatal \
+		-Wno-PROCASSINIT -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Wno-SYNCASYNCNET -DPFE_REAL_DUT -DPFE_LANE_NUM=4 \
+		-DLANE_WIDTH=3:0 -Ienv -Ith -Itools/lint \
+		--top-module lint_top tools/lint/EXAM2021_TOP.sv \
+		env/pfe_if.sv env/protocol_sva.sv th/dut_adapter.sv \
+		tools/lint/lint_top.sv
 
 lint-uvm:
 	verilator --lint-only --timing -Wall -Wno-fatal \
 		-Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		-Wno-COVERIGN -Wno-VARHIDDEN -Wno-UNDRIVEN -Wno-PROCASSINIT \
 		-Wno-SYNCASYNCNET -Wno-IMPURE --assert \
-		-Itb/lint -Itb -Itb/interfaces -Itb/pkg -Itb/agents -Itb/env \
-		-Itb/seq -Itb/tests -Itb/integration \
-		--top-module pfe_tb_top \
-		tb/interfaces/pfe_if.sv tb/lint/uvm_pkg.sv \
-		tb/pkg/pfe_uvm_pkg.sv tb/sva/pfe_protocol_sva.sv \
-		tb/top/pfe_dut_adapter.sv tb/top/pfe_tb_top.sv
+		-Itools/lint -Ienv -Itc -Ith \
+		--top-module harness \
+		env/pfe_if.sv tools/lint/uvm_pkg.sv \
+		env/env_pkg.sv env/protocol_sva.sv tc/$(TC).sv \
+		th/dut_adapter.sv th/harness.sv
 
 lint-topologies:
 	@for lane in 3 4 5 6 7; do \
@@ -36,23 +43,20 @@ lint-topologies:
 			-Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 			-Wno-COVERIGN -Wno-VARHIDDEN -Wno-UNDRIVEN -Wno-PROCASSINIT \
 			-Wno-SYNCASYNCNET -Wno-IMPURE -DPFE_LANE_NUM=$$lane \
-			-Itb/lint -Itb -Itb/interfaces -Itb/pkg -Itb/agents -Itb/env \
-			-Itb/seq -Itb/tests -Itb/integration --top-module pfe_tb_top \
-			tb/interfaces/pfe_if.sv tb/lint/uvm_pkg.sv \
-			tb/pkg/pfe_uvm_pkg.sv tb/sva/pfe_protocol_sva.sv \
-			tb/top/pfe_dut_adapter.sv tb/top/pfe_tb_top.sv || exit $$?; \
+			-Itools/lint -Ienv -Itc -Ith --top-module harness \
+			env/pfe_if.sv tools/lint/uvm_pkg.sv \
+			env/env_pkg.sv env/protocol_sva.sv tc/smoke.sv \
+			th/dut_adapter.sv th/harness.sv || exit $$?; \
 	done
 
 smoke:
-	SIM=$(SIM) LANE_NUM=$(LANE_NUM) TEST=$(TEST) ./scripts/run_test.sh
+	SIM=$(SIM) LANE_NUM=$(LANE_NUM) TC=$(TC) ./scripts/run_test.sh
 
 regress:
 	./scripts/run_h_regress.sh
 
-gen-bind:
-	@test -n "$(DUT_MODULE)" || (echo "DUT_MODULE is required"; exit 2)
-	python3 scripts/gen_flat_bind.py --module "$(DUT_MODULE)" \
-		--lanes "$(LANE_NUM)" --output tb/integration/pfe_dut_bind.svh
+bundle:
+	./scripts/package_uvm.sh
 
 perf-compare:
 	@test -n "$(GOLDEN)" || (echo "GOLDEN CSV/glob is required"; exit 2)
