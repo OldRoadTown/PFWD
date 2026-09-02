@@ -31,8 +31,13 @@ file to `env.f` or to an individual regression job. Those files are source
 includes owned by `tc/tc_pkg.sv`, not independent compilation units.
 
 The production compile also needs `+define+PFE_REAL_DUT`,
-`+define+PFE_USE_REAL_DATA_VIP`, the chosen `PFE_LANE_NUM`, and the encrypted
-VIP include directory. Do not compile `tools/lint/` in the intranet flow.
+`+define+PFE_USE_REAL_DATA_VIP`, and the encrypted VIP include directory. If
+the RTL filelist defines a cumulative `LANE_2` through `LANE_7` selector, place
+that filelist before `env/pfe_if.sv`; the environment derives `PFE_LANE_NUM`
+from the highest visible selector. A regression may still define
+`PFE_LANE_NUM` explicitly, in which case the harness checks it against the RTL
+selector and stops on a mismatch. Do not compile `tools/lint/` in the intranet
+flow.
 
 The source framework is ready for site integration; these are the steps that
 cannot be verified outside the intranet without the Golden RTL and encrypted

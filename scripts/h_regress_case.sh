@@ -5,7 +5,7 @@ set -euo pipefail
 # The variable aliases cover common scheduler naming conventions without
 # placing a fixed seed in the checked-in regression manifest.
 export TC="${TC:-${HREG_TC:-smoke}}"
-export LANE_NUM="${LANE_NUM:-${HREG_LANE_NUM:-4}}"
+export LANE_NUM="${LANE_NUM:-${HREG_LANE_NUM:-auto}}"
 export RTL_KIND="${RTL_KIND:-${HREG_RTL_KIND:-candidate}}"
 export COVERAGE="${COVERAGE:-${HREG_COVERAGE:-}}"
 export SEED="${SEED:-${HREG_SEED:-}}"

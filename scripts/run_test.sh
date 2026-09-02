@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SIM="${SIM:-vcs}"
-LANE_NUM="${LANE_NUM:-4}"
+LANE_NUM="${LANE_NUM:-auto}"
 TC="${TC:-smoke}"
 TC_SOURCE="${ROOT_DIR}/tc/${TC}.sv"
 SEED="${SEED:-$(( ( $(date +%s) ^ $$ ^ RANDOM ) & 0x7fffffff ))}"
@@ -24,10 +24,13 @@ COMMON_PLUSARGS=("+UVM_TESTNAME=${TC}"
                  "+PFE_TC_NAME=${TC}"
                  "+PFE_PERF_FILE=${RUN_DIR}/pfe_perf.csv")
 
-if (( LANE_NUM < 3 || LANE_NUM > 7 )); then
-  echo "LANE_NUM must be in [3:7]" >&2
-  exit 2
-fi
+case "${LANE_NUM}" in
+  auto|3|4|5|6|7) ;;
+  *)
+    echo "LANE_NUM must be auto or an integer in [3:7]" >&2
+    exit 2
+    ;;
+esac
 
 if [[ ! -f "${TC_SOURCE}" ]]; then
   echo "UVM test source ${TC_SOURCE} does not exist" >&2
@@ -36,7 +39,10 @@ fi
 
 mkdir -p "${BUILD_DIR}" "${RUN_DIR}"
 
-DEFINES=("+define+PFE_LANE_NUM=${LANE_NUM}")
+DEFINES=()
+if [[ "${LANE_NUM}" != "auto" ]]; then
+  DEFINES+=("+define+PFE_LANE_NUM=${LANE_NUM}")
+fi
 INCDIRS=()
 EXTRA_FILES=()
 

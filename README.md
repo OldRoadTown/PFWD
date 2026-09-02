@@ -75,6 +75,21 @@ export VIP_DIR=/internal/path/vip
 RTL_KIND=golden LANE_NUM=4 TC=smoke ./scripts/run_test.sh
 ```
 
+When the selected RTL defines one of the cumulative `LANE_2` through `LANE_7`
+topology macros, `LANE_NUM` may be omitted. The runner compiles the DUT
+filelist before the verification sources, and the environment derives its lane
+count from the highest visible `LANE_x` macro. An explicit `LANE_NUM` remains
+available for regression topology selection; simulation stops immediately if
+it disagrees with the RTL macro.
+
+```bash
+RTL_KIND=bug0 TC=smoke ./scripts/run_test.sh
+```
+
+Automatic topology runs disable coverage by default because the shell cannot
+know the RTL macro before compilation. Set `COVERAGE=1` explicitly for an
+automatic Lane-4 Golden coverage run.
+
 The intranet's fixed scripts may use different variable names; keep those
 scripts and reproduce only the source order described in `sim/files.f`.
 

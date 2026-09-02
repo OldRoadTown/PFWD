@@ -13,8 +13,25 @@ module harness;
   protocol_sva #(`PFE_LANE_NUM) u_protocol_sva(pfe_vif);
 
   initial begin
+`ifdef PFE_LANE_NUM_RTL_MISSING
+    $fatal(1,
+      "LANE_NUM=auto but no RTL LANE_2 through LANE_7 selector was visible; compile the RTL configuration before env/pfe_if.sv or set LANE_NUM explicitly");
+`endif
+`ifdef PFE_RTL_LANE_NUM
+    if (`PFE_LANE_NUM != `PFE_RTL_LANE_NUM)
+      $fatal(1,
+        "PFE_LANE_NUM=%0d disagrees with RTL LANE_x selection=%0d",
+        `PFE_LANE_NUM, `PFE_RTL_LANE_NUM);
+`endif
     if (`PFE_LANE_NUM < `PFE_MIN_LANES || `PFE_LANE_NUM > `PFE_MAX_LANES)
       $fatal(1, "PFE_LANE_NUM=%0d is outside supported range [3:7]", `PFE_LANE_NUM);
+`ifdef PFE_LANE_NUM_FROM_RTL
+    $display("PFE_LANE_CONFIG source=rtl_macro lanes=%0d", `PFE_LANE_NUM);
+`elsif PFE_LANE_NUM_FALLBACK
+    $display("PFE_LANE_CONFIG source=fallback lanes=%0d", `PFE_LANE_NUM);
+`else
+    $display("PFE_LANE_CONFIG source=explicit lanes=%0d", `PFE_LANE_NUM);
+`endif
     pfe_vif.rst_n = 1'b0;
     pfe_vif.apply_reset(6);
   end

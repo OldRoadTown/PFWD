@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .PHONY: lint lint-rtl lint-bind lint-uvm lint-topologies smoke regress bundle perf-compare summarize clean
 
-LANE_NUM ?= 4
+LANE_NUM ?= auto
 TC ?= smoke
 SIM ?= vcs
 
@@ -19,7 +19,7 @@ lint-rtl:
 lint-bind:
 	verilator --lint-only --timing --assert -Wall -Wno-fatal \
 		-Wno-PROCASSINIT -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
-		-Wno-SYNCASYNCNET -DPFE_REAL_DUT -DPFE_LANE_NUM=4 \
+		-Wno-SYNCASYNCNET -DPFE_REAL_DUT -DLANE_4 \
 		-DLANE_WIDTH=3:0 -Ienv -Ith -Itools/lint \
 		--top-module lint_top tools/lint/EXAM2021_TOP.sv \
 		tools/lint/uvm_pkg.sv env/pfe_if.sv env/protocol_sva.sv th/dut_adapter.sv \
@@ -38,11 +38,11 @@ lint-uvm:
 
 lint-topologies:
 	@for lane in 3 4 5 6 7; do \
-		echo "Linting PFE_LANE_NUM=$$lane"; \
+		echo "Linting automatic RTL LANE_$$lane selection"; \
 		verilator --lint-only --timing --assert -Wno-fatal \
 			-Wno-DECLFILENAME -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 			-Wno-COVERIGN -Wno-VARHIDDEN -Wno-UNDRIVEN -Wno-PROCASSINIT \
-			-Wno-SYNCASYNCNET -Wno-IMPURE -DPFE_LANE_NUM=$$lane \
+			-Wno-SYNCASYNCNET -Wno-IMPURE -DLANE_$$lane \
 			-Itools/lint -Ienv -Itc -Ith --top-module harness \
 			env/pfe_if.sv tools/lint/uvm_pkg.sv \
 			env/env_pkg.sv env/protocol_sva.sv tc/tc_pkg.sv \
