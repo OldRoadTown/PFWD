@@ -69,7 +69,8 @@ other topologies establish configurability without multiplying coverage data.
 ## 5. Performance criteria
 
 Each topology uses its corresponding known-good `hdl_featureN` RTL as the
-performance reference. The benchmark records active completion cycles,
+performance reference. The checked-in active-cycle limits are Lane 3 = 905 and
+Lane 4 through Lane 7 = 453. The benchmark records active completion cycles,
 throughput, end-to-end latency average/maximum, backpressure ratio/maximum
 streak, output slots/utilization, observed cycles, and packet balance. Lane
 masks, data, latency, and dependency controls are constructed deterministically
@@ -77,7 +78,7 @@ in the sequence, so the simulation seed does not alter the benchmark traffic.
 
 Candidate failure is automatic when any configured condition is violated:
 
-- active completion cycles exceed the topology-matched reference;
+- active completion cycles exceed the topology-matched checked-in reference;
 - throughput is below the Golden median multiplied by the minimum ratio;
 - output utilization is below the Golden median multiplied by the minimum ratio;
 - end-to-end latency exceeds the Golden median multiplied by the maximum ratio;

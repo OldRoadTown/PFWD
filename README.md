@@ -140,10 +140,13 @@ python3 scripts/compare_perf.py \
 ```
 
 The comparison rejects topology mismatches, different packet counts, and runs
-that did not output every accepted packet. By default, any increase in median
-active cycles is a performance regression. Throughput, output utilization,
-average end-to-end latency, and backpressure thresholds remain available as
-command-line options. The command exits nonzero on a regression.
+that did not output every accepted packet. The checked-in `performance` test
+also contains the measured reference active-cycle limits: Lane 3 is `905`, and
+Lane 4 through Lane 7 are `453`. A candidate exceeding its matching limit
+reports `PERF_ACTIVE_CYCLES` directly in the simulation. Throughput, output
+utilization, average end-to-end latency, and backpressure thresholds remain
+available as command-line options for external comparison. A candidate that is
+faster is not classified as a regression by the cycle gate.
 
 ## Issue tracking
 

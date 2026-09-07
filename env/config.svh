@@ -15,6 +15,7 @@ class pfe_env_cfg extends uvm_object;
   real perf_max_e2e_ratio   = 1.10;
   real perf_base_bkpr_ratio = -1.0;
   real perf_max_bkpr_delta  = 0.05;
+  longint unsigned perf_base_active_cycles = 0;
   string perf_result_file   = "pfe_perf.csv";
 
   `uvm_object_utils_begin(pfe_env_cfg)
@@ -29,6 +30,7 @@ class pfe_env_cfg extends uvm_object;
     `uvm_field_real(perf_min_tput_ratio, UVM_DEC)
     `uvm_field_real(perf_base_avg_e2e, UVM_DEC)
     `uvm_field_real(perf_max_e2e_ratio, UVM_DEC)
+    `uvm_field_int(perf_base_active_cycles, UVM_DEC)
     `uvm_field_string(perf_result_file, UVM_DEFAULT)
   `uvm_object_utils_end
 

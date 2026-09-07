@@ -229,6 +229,11 @@ class pfe_scoreboard extends uvm_component;
       `uvm_error("PERF_BKPR",
         $sformatf("bkpr_ratio=%0.6f baseline=%0.6f allowed_delta=%0.3f",
                   bkpr, cfg.perf_base_bkpr_ratio, cfg.perf_max_bkpr_delta))
+    if (cfg.perf_base_active_cycles > 0 &&
+        active_cycles() > cfg.perf_base_active_cycles)
+      `uvm_error("PERF_ACTIVE_CYCLES",
+        $sformatf("active_cycles=%0d reference=%0d",
+                  active_cycles(), cfg.perf_base_active_cycles))
   endfunction
 
   function void report_phase(uvm_phase phase);
