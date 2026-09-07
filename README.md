@@ -2,8 +2,9 @@
 
 This repository contains a configurable SystemVerilog/UVM environment for the
 Package Forward Engine specification. Its protocol model supports compile-time
-`LANE_NUM` values 3 through 7. Coverage and performance qualification are
-focused on Lane 4 as required.
+`LANE_NUM` values 3 through 7. Functional coverage qualification remains
+focused on Lane 4, while deterministic performance comparison supports every
+topology.
 
 ## What is implemented
 
@@ -16,7 +17,7 @@ focused on Lane 4 as required.
   performance checks;
 - interface SVA plus assertion cover properties;
 - functional covergroups and fifteen directed/random tests;
-- Lane-4 Golden/candidate performance CSV generation and comparison;
+- topology-matched reference/candidate performance CSV generation and comparison;
 - VCS, Xcelium, and Questa command adapters with assertion checking and
   assertion coverage enabled;
 - seed-free regression manifest and an h_regress case adapter.
@@ -123,19 +124,26 @@ Run the manifest first with `RTL_KIND=golden`. Configure h_regress to stop the
 campaign on the first Golden failure. Only after the complete Golden campaign
 passes should the same manifest run with `RTL_KIND=candidate`.
 
-## Lane-4 performance gate
+## Topology-matched performance gate
 
-Collect several `performance.sv` CSV files for each RTL, then run:
+The performance sequence uses fixed lane masks, latency/dependency controls,
+and payload tags derived from phase, beat, lane, and sequence number. Its
+stimulus therefore does not change with the simulation seed. Collect one or
+more `performance.sv` CSV files for a known-good `hdl_featureN` reference and a
+Bug RTL with the same lane count, then run:
 
 ```bash
 python3 scripts/compare_perf.py \
-  --golden 'out/runs/golden/lane4/performance/*/pfe_perf.csv' \
-  --candidate 'out/runs/candidate/lane4/performance/*/pfe_perf.csv' \
+  --golden 'out/runs/hdl_feature4/lane4/performance/*/pfe_perf.csv' \
+  --candidate 'out/runs/bug5/lane4/performance/*/pfe_perf.csv' \
   --report out/perf_comparison.json
 ```
 
-The command exits nonzero on a performance regression. Thresholds are command
-line options rather than hard-coded Golden values.
+The comparison rejects topology mismatches, different packet counts, and runs
+that did not output every accepted packet. By default, any increase in median
+active cycles is a performance regression. Throughput, output utilization,
+average end-to-end latency, and backpressure thresholds remain available as
+command-line options. The command exits nonzero on a regression.
 
 ## Issue tracking
 

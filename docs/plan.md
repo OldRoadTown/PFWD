@@ -64,25 +64,29 @@ other topologies establish configurability without multiplying coverage data.
 | `scheduler.sv` | slow roots, dependents, and free traffic mixed |
 | `reset.sv` | legal reset, model flush, and post-reset traffic |
 | `random.sv` | bounded randomized lane/latency/dependency mix |
-| `performance.sv` | deterministic control-pattern performance baseline |
+| `performance.sv` | deterministic data/control performance baseline for Lane 3 through Lane 7 |
 
 ## 5. Performance criteria
 
-Lane-4 performance records throughput, end-to-end latency average/maximum,
-backpressure ratio/maximum streak, output slots/utilization, observed cycles,
-and packet balance. The directed performance sequence does not make scheduling
-depend on random payload values, so Golden and candidate runs need not reuse a
-fixed seed.
+Each topology uses its corresponding known-good `hdl_featureN` RTL as the
+performance reference. The benchmark records active completion cycles,
+throughput, end-to-end latency average/maximum, backpressure ratio/maximum
+streak, output slots/utilization, observed cycles, and packet balance. Lane
+masks, data, latency, and dependency controls are constructed deterministically
+in the sequence, so the simulation seed does not alter the benchmark traffic.
 
 Candidate failure is automatic when any configured condition is violated:
 
+- active completion cycles exceed the topology-matched reference;
 - throughput is below the Golden median multiplied by the minimum ratio;
 - output utilization is below the Golden median multiplied by the minimum ratio;
 - end-to-end latency exceeds the Golden median multiplied by the maximum ratio;
 - backpressure ratio exceeds Golden by the configured absolute delta.
 
-Use several Golden samples and several candidate samples with
-`scripts/compare_perf.py`; it compares medians to reduce host-load noise.
+Use `scripts/compare_perf.py` to compare only runs with the same lane count and
+packet count. It compares medians when multiple samples are supplied; repeated
+samples should be identical and are useful for detecting stale builds or
+configuration drift.
 
 ## 6. Closure procedure
 
@@ -90,7 +94,7 @@ Use several Golden samples and several candidate samples with
 2. Merge only Lane-4 assertion and functional coverage databases.
 3. Inspect uncovered assertion names and map each to an existing test.
 4. Tighten or add a directed sequence before increasing random repeat counts.
-5. Record Golden Lane-4 performance samples.
+5. Record one `hdl_featureN` performance reference for each required topology.
 6. Run candidate RTL and apply the functional plus performance gates.
 7. Reproduce failures with the seed printed in `PFE_RUN`, without placing that
    seed in the checked-in regression configuration.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare Lane-4 candidate performance CSV against Golden RTL results."""
+"""Compare candidate performance against its topology-matched reference."""
 
 from __future__ import annotations
 
@@ -11,7 +11,16 @@ import statistics
 from pathlib import Path
 
 
-METRICS = ("throughput", "avg_e2e", "bkpr_ratio", "max_bkpr", "out_util")
+IDENTITY_FIELDS = ("lane_num", "accepted", "output")
+METRICS = (
+    "active_cycles",
+    "throughput",
+    "avg_e2e",
+    "bkpr_ratio",
+    "max_bkpr",
+    "out_util",
+)
+REQUIRED_FIELDS = set(IDENTITY_FIELDS + METRICS)
 
 
 def load(patterns: list[str]) -> list[dict[str, float]]:
@@ -24,7 +33,14 @@ def load(patterns: list[str]) -> list[dict[str, float]]:
             for row in csv.DictReader(handle):
                 if not row or row.get("test") == "test":
                     continue
-                rows.append({metric: float(row[metric]) for metric in METRICS})
+                missing = sorted(REQUIRED_FIELDS - row.keys())
+                if missing:
+                    raise ValueError(
+                        f"{name}: missing columns {missing}; rerun the performance test"
+                    )
+                rows.append(
+                    {field: float(row[field]) for field in IDENTITY_FIELDS + METRICS}
+                )
     if not rows:
         raise ValueError("performance CSV files contain no data rows")
     return rows
@@ -32,6 +48,33 @@ def load(patterns: list[str]) -> list[dict[str, float]]:
 
 def summarize(rows: list[dict[str, float]]) -> dict[str, float]:
     return {metric: statistics.median(row[metric] for row in rows) for metric in METRICS}
+
+
+def validate_pair(
+    golden_rows: list[dict[str, float]], candidate_rows: list[dict[str, float]]
+) -> tuple[int, int]:
+    lane_nums = {
+        int(row["lane_num"]) for row in golden_rows + candidate_rows
+    }
+    if len(lane_nums) != 1:
+        raise ValueError(f"reference and candidate lane_num values differ: {lane_nums}")
+
+    for label, rows in (("reference", golden_rows), ("candidate", candidate_rows)):
+        for row in rows:
+            if int(row["accepted"]) != int(row["output"]):
+                raise ValueError(
+                    f"{label} has accepted={int(row['accepted'])} "
+                    f"but output={int(row['output'])}; classify the functional failure first"
+                )
+
+    packet_counts = {
+        int(row["output"]) for row in golden_rows + candidate_rows
+    }
+    if len(packet_counts) != 1:
+        raise ValueError(
+            f"reference and candidate packet counts differ: {packet_counts}"
+        )
+    return lane_nums.pop(), packet_counts.pop()
 
 
 def main() -> int:
@@ -42,12 +85,21 @@ def main() -> int:
     parser.add_argument("--min-output-util-ratio", type=float, default=0.90)
     parser.add_argument("--max-latency-ratio", type=float, default=1.10)
     parser.add_argument("--max-bkpr-delta", type=float, default=0.05)
+    parser.add_argument("--max-active-cycles-ratio", type=float, default=1.0)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
 
-    golden = summarize(load(args.golden))
-    candidate = summarize(load(args.candidate))
+    golden_rows = load(args.golden)
+    candidate_rows = load(args.candidate)
+    lane_num, packet_count = validate_pair(golden_rows, candidate_rows)
+    golden = summarize(golden_rows)
+    candidate = summarize(candidate_rows)
     checks = {
+        "active_cycles": {
+            "pass": candidate["active_cycles"]
+            <= golden["active_cycles"] * args.max_active_cycles_ratio,
+            "maximum": golden["active_cycles"] * args.max_active_cycles_ratio,
+        },
         "throughput": {
             "pass": candidate["throughput"]
             >= golden["throughput"] * args.min_throughput_ratio,
@@ -70,7 +122,14 @@ def main() -> int:
         },
     }
     passed = all(check["pass"] for check in checks.values())
-    report = {"pass": passed, "golden": golden, "candidate": candidate, "checks": checks}
+    report = {
+        "pass": passed,
+        "lane_num": lane_num,
+        "packet_count": packet_count,
+        "golden": golden,
+        "candidate": candidate,
+        "checks": checks,
+    }
     rendered = json.dumps(report, indent=2, sort_keys=True)
     print(rendered)
     if args.report:

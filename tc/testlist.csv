@@ -1,5 +1,6 @@
 name,lane_num,uvm_test,coverage,performance
 lane3_config,3,lane_config,0,0
+lane3_performance,3,performance,0,1
 lane4_smoke,4,smoke,1,0
 lane4_no_dependency,4,no_dep,1,0
 lane4_dependency_distance,4,dep_distance,1,0
@@ -15,5 +16,8 @@ lane4_reset,4,reset,1,0
 lane4_random,4,random,1,0
 lane4_performance,4,performance,0,1
 lane5_config,5,lane_config,0,0
+lane5_performance,5,performance,0,1
 lane6_config,6,lane_config,0,0
+lane6_performance,6,performance,0,1
 lane7_config,7,lane_config,0,0
+lane7_performance,7,performance,0,1

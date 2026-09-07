@@ -175,10 +175,14 @@ class pfe_scoreboard extends uvm_component;
                   timeout_cycles, expected_count, output_count, accepted_count))
   endtask
 
+  function longint unsigned active_cycles();
+    if (output_count == 0 || last_output_cycle < first_accept_cycle) return 0;
+    return last_output_cycle - first_accept_cycle + 1;
+  endfunction
+
   function real throughput();
-    longint unsigned span;
-    if (output_count == 0 || last_output_cycle < first_accept_cycle) return 0.0;
-    span = last_output_cycle - first_accept_cycle + 1;
+    longint unsigned span = active_cycles();
+    if (span == 0) return 0.0;
     return real'(output_count) / real'(span);
   endfunction
 
@@ -236,9 +240,9 @@ class pfe_scoreboard extends uvm_component;
     end
 
     `uvm_info("PFE_PERF",
-      $sformatf("test=%s lanes=%0d accepted=%0d output=%0d cycles=%0d throughput=%0.6f avg_e2e=%0.3f max_e2e=%0d bkpr_ratio=%0.6f max_bkpr=%0d out_util=%0.6f",
+      $sformatf("test=%s lanes=%0d accepted=%0d output=%0d cycles=%0d active_cycles=%0d throughput=%0.6f avg_e2e=%0.3f max_e2e=%0d bkpr_ratio=%0.6f max_bkpr=%0d out_util=%0.6f",
                 test_name, cfg.lane_num, accepted_count, output_count,
-                observed_cycles, throughput(), avg_e2e(), max_e2e,
+                observed_cycles, active_cycles(), throughput(), avg_e2e(), max_e2e,
                 bkpr_ratio(), max_bkpr_streak, output_utilization()), UVM_NONE)
 
     fd = $fopen(cfg.perf_result_file, "w");
@@ -246,10 +250,10 @@ class pfe_scoreboard extends uvm_component;
       `uvm_warning("PERF_FILE", $sformatf("cannot open %s", cfg.perf_result_file))
       return;
     end
-    $fdisplay(fd, "test,lane_num,accepted,output,observed_cycles,sim_cycles,throughput,avg_e2e,max_e2e,bkpr_ratio,max_bkpr,out_slots,out_util");
-    $fdisplay(fd, "%s,%0d,%0d,%0d,%0d,%0d,%0.9f,%0.6f,%0d,%0.9f,%0d,%0d,%0.9f",
+    $fdisplay(fd, "test,lane_num,accepted,output,observed_cycles,sim_cycles,active_cycles,throughput,avg_e2e,max_e2e,bkpr_ratio,max_bkpr,out_slots,out_util");
+    $fdisplay(fd, "%s,%0d,%0d,%0d,%0d,%0d,%0d,%0.9f,%0.6f,%0d,%0.9f,%0d,%0d,%0.9f",
               test_name, cfg.lane_num, accepted_count, output_count,
-              observed_cycles, vif.cycle_count, throughput(), avg_e2e(),
+              observed_cycles, vif.cycle_count, active_cycles(), throughput(), avg_e2e(),
               max_e2e, bkpr_ratio(), max_bkpr_streak, output_slots,
               output_utilization());
     $fclose(fd);

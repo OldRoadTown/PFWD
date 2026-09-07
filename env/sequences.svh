@@ -287,35 +287,57 @@ endclass
 class pfe_performance_sequence extends pfe_base_sequence;
   `uvm_object_utils(pfe_performance_sequence)
   function new(string name = "pfe_performance_sequence"); super.new(name); endfunction
-  task body();
-    if (p_sequencer.cfg.lane_num != 4)
-      `uvm_fatal("PERF_TOPOLOGY", "pfe_performance_sequence requires LANE_NUM=4")
 
+  function bit [127:0] benchmark_data(
+    int unsigned phase,
+    int unsigned beat,
+    int unsigned lane,
+    longint unsigned seq
+  );
+    return {32'h5046_4550, phase[15:0], beat[15:0], lane[31:0], seq[31:0]};
+  endfunction
+
+  function pfe_input_cycle_item make_benchmark_beat(
+    int unsigned phase,
+    int unsigned beat
+  );
+    pfe_input_cycle_item req = make_random_beat(full_mask(), "perf_beat");
+    for (int lane = 0; lane < p_sequencer.cfg.lane_num; lane++) begin
+      longint unsigned seq = generated_packets + longint'(lane);
+      // prepare_dependencies() XORs seq into every active payload. Pre-apply
+      // the same value so the driven packet retains this deterministic tag.
+      req.data[lane] = benchmark_data(phase, beat, lane, seq) ^ {64'h0, seq};
+    end
+    return req;
+  endfunction
+
+  task body();
     // Phase A: latency-1 saturated independent traffic.
-    repeat (128) begin
-      pfe_input_cycle_item req = make_random_beat(full_mask());
-      for (int lane = 0; lane < 4; lane++) begin
+    for (int beat = 0; beat < 128; beat++) begin
+      pfe_input_cycle_item req = make_benchmark_beat(0, beat);
+      for (int lane = 0; lane < p_sequencer.cfg.lane_num; lane++) begin
         req.latency[lane] = 0;
         req.dp[lane] = 0;
       end
       send_beat(req);
     end
     // Phase B: latency-4 saturated independent traffic.
-    repeat (128) begin
-      pfe_input_cycle_item req = make_random_beat(full_mask());
-      for (int lane = 0; lane < 4; lane++) begin
+    for (int beat = 0; beat < 128; beat++) begin
+      pfe_input_cycle_item req = make_benchmark_beat(1, beat);
+      for (int lane = 0; lane < p_sequencer.cfg.lane_num; lane++) begin
         req.latency[lane] = 3;
         req.dp[lane] = 0;
       end
       send_beat(req);
     end
     // Phase C: mix slow dependencies with free packets to expose HOL stalls.
-    repeat (32) begin
-      pfe_input_cycle_item req = make_random_beat(full_mask());
-      for (int lane = 0; lane < 4; lane++) begin
+    for (int beat = 0; beat < 32; beat++) begin
+      pfe_input_cycle_item req = make_benchmark_beat(2, beat);
+      for (int lane = 0; lane < p_sequencer.cfg.lane_num; lane++) begin
         req.latency[lane] = (lane == 0) ? 3 : 0;
         req.dp[lane] = pfe_dp_t'(
-          (generated_packets > 7 && lane != 3) ? (lane+1) : 0);
+          (generated_packets > 7 && lane != p_sequencer.cfg.lane_num-1)
+            ? (lane+1) : 0);
       end
       send_beat(req);
     end
