@@ -82,13 +82,20 @@ count from the highest visible `LANE_x` macro. An explicit `LANE_NUM` remains
 available for regression topology selection; simulation stops immediately if
 it disagrees with the RTL macro.
 
+The `hdl_feature3` through `hdl_feature7` RTL variants instead expose an
+unpacked-array range through `LANE_WIDTH`. When that macro is visible, the
+environment derives the lane count from the width of the range, so the same
+fixed internal compile script can leave `LANE_NUM` on `auto`.
+
 ```bash
 RTL_KIND=bug0 TC=smoke ./scripts/run_test.sh
+RTL_KIND=hdl_feature3 TC=lane_config ./scripts/run_test.sh
+RTL_KIND=hdl_feature7 TC=lane_config ./scripts/run_test.sh
 ```
 
 Automatic topology runs disable coverage by default because the shell cannot
-know the RTL macro before compilation. Set `COVERAGE=1` explicitly for an
-automatic Lane-4 Golden coverage run.
+know the RTL macro or `LANE_WIDTH` before compilation. Set `COVERAGE=1`
+explicitly for an automatic Lane-4 Golden coverage run.
 
 The intranet's fixed scripts may use different variable names; keep those
 scripts and reproduce only the source order described in `sim/files.f`.

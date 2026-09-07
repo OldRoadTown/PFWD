@@ -27,6 +27,8 @@ module harness;
       $fatal(1, "PFE_LANE_NUM=%0d is outside supported range [3:7]", `PFE_LANE_NUM);
 `ifdef PFE_LANE_NUM_FROM_RTL
     $display("PFE_LANE_CONFIG source=rtl_macro lanes=%0d", `PFE_LANE_NUM);
+`elsif PFE_LANE_NUM_FROM_RTL_WIDTH
+    $display("PFE_LANE_CONFIG source=rtl_lane_width lanes=%0d", `PFE_LANE_NUM);
 `elsif PFE_LANE_NUM_FALLBACK
     $display("PFE_LANE_CONFIG source=fallback lanes=%0d", `PFE_LANE_NUM);
 `else

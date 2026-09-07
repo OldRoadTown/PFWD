@@ -22,6 +22,11 @@
   `ifdef PFE_RTL_LANE_NUM
     `define PFE_LANE_NUM `PFE_RTL_LANE_NUM
     `define PFE_LANE_NUM_FROM_RTL
+  `elsif LANE_WIDTH
+    // hdl_feature3 through hdl_feature7 express their topology as an
+    // unpacked-array range such as LANE_WIDTH=2:0 rather than LANE_3.
+    `define PFE_LANE_NUM $bits(logic [`LANE_WIDTH])
+    `define PFE_LANE_NUM_FROM_RTL_WIDTH
   `else
     // Keep a numeric value available so parsing/elaboration can finish far
     // enough for harness to issue a clear error in a real-DUT auto run.
