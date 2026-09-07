@@ -1,6 +1,6 @@
 # PFE Verification Issue and Bug Log
 
-Last updated: 2026-09-01
+Last updated: 2026-09-07
 
 This is the persistent record for DUT bugs, verification-environment issues,
 coverage gaps, and performance regressions. Update it whenever a new issue is
@@ -34,8 +34,11 @@ Lane 3/5/6/7 databases must not be merged into this baseline.
 | ID | RTL | Class | Detection | Primary checker | Status |
 |---|---|---|---|---|---|
 | `DUT-BUG0` | `bug0` | Functional: unknown output control and no progress | `pkt_out_vld` remains X after reset; run eventually times out | `a_known_output_valids`, stimulus watchdog | `FOUND` |
+| `DUT-BUG2` | `bug2` | Functional: output data corruption under mixed smoke traffic | First mismatch at sequence 15, lane 3, cycle 23; sequences 17 and 31 also mismatch | End-to-end scoreboard (`PKTOUT_DATA`) | `FOUND` |
 | `DUT-BUG3` | `bug3` | Functional: X/Z observed on output valid/control | Protocol assertion prints an X/Z failure; exact signal and trigger are pending waveform triage | `a_known_output_valids` | `FOUND` |
-| `DUT-BUG10` | `bug10` | Pending classification: same output valid/control X/Z checker fired | Must first prove bug10 used a clean, unique RTL build rather than a cached bug3 image | `a_known_output_valids` | `OPEN` |
+| `DUT-BUG10` | `bug10` | Functional: dependency traffic makes no output progress | `dep_fanout` produces no visible PKTOUT within 4096 cycles; `dep_chain` also reaches the stimulus watchdog | `a_bounded_visible_progress`, stimulus watchdog | `FOUND` |
+| `DUT-BUG11` | `bug11` | Functional: incorrect output data under seven-lane parallel traffic | First mismatch at time 15500, cycle 16, sequence 28, lane 0 | End-to-end scoreboard (`PKTOUT_DATA`) | `FOUND` |
+| `DUT-BUG13` | `bug13` | Functional: zero output data for a maximum-latency dependency chain | First mismatch at time 128500, cycle 129, sequence 103, lane 3; actual data is zero | End-to-end scoreboard (`PKTOUT_DATA`) | `FOUND` |
 
 ## DUT-BUG0: output valid remains unknown
 
@@ -99,6 +102,36 @@ proven and is not required for verification closure.
 - Fill in testcase, seed, and first-failure time from the internal run.
 - Continue with bug1 using coverage collection disabled.
 
+## DUT-BUG2: smoke output data corruption
+
+### Reproduction
+
+| Field | Value |
+|---|---|
+| RTL | `bug2` |
+| Topology | Lane 4 |
+| Testcase | `smoke` |
+| Seed | Pending: copy from the failing simulation log |
+| First-failure cycle | 23 |
+| First failing packet | Sequence 15, lane 3 |
+| Expected/actual data | Pending: copy from the failing simulation log |
+| Subsequent evidence | Sequences 17 and 31 also report output data mismatches |
+| Failure | Expected and actual output data differ (`PKTOUT_DATA`) |
+
+### Verdict and next action
+
+Bug2 is classified as a functional data-path failure detected by the
+end-to-end scoreboard. Sequence 15 is the first observed mismatch; later
+mismatches are supporting or cascading evidence rather than separate bugs.
+Sequence 31 recurring at the same position modulo 16 suggests a possible
+16-entry boundary or slot-reuse defect, while sequence 17 may reflect
+dependency propagation from sequence 15. These remain root-cause hypotheses
+until confirmed from the packet controls and internal waveform.
+
+Preserve the failing seed, expected/actual values, and the `dp`/latency fields
+for sequences 15, 17, and 31. Compare with Golden using the same configuration
+before assigning the defect to dependency propagation or entry wraparound.
+
 ## DUT-BUG3: assertion detects X/Z but UVM initially reported zero errors
 
 ### Observed behavior
@@ -117,16 +150,94 @@ that bug3 passed. After the SVA-to-UVM bridge is installed, rerun the complete
 Golden regression first, then rerun the failing bug3 testcase. The corrected
 run must have a nonzero UVM error count and must not emit `PASSED`.
 
-## DUT-BUG10: same X/Z checker as bug3
+## DUT-BUG10: dependency traffic makes no output progress
 
-Bug10 currently fires the same `a_known_output_valids` assertion as bug3. This
-is possible for two independent internal defects because different reset,
-queue-valid, scheduler, or port-driver failures can converge on the same
-black-box symptom. Before marking bug10 `FOUND`, use a clean build directory,
-confirm `compile.log` references only the bug10 RTL filelist, and compare its
-first-failure time and output-valid bit pattern with bug3 under the same
-reproduction seed. Bit-for-bit identical runs indicate a likely stale/cached
-RTL image; distinct traces with the same checker can represent separate bugs.
+### Reproduction
+
+| Field | Value |
+|---|---|
+| RTL | `bug10` |
+| Topology | Pending: copy from the failing simulation log |
+| Testcases | `dep_chain`, `dep_fanout` |
+| Seed | Pending: copy from the failing simulation log |
+| `dep_fanout` failure | `PFE made no visible PKTOUT progress within 4096 cycles` (`PFE_SVA_PROGRESS`) |
+| Terminal failure | `sequence did not complete within 20000 cycles` (`STIMULUS_TIMEOUT`) |
+
+### Verdict and next action
+
+Both directed dependency-chain and dependency-fanout traffic detect bug10. The
+`dep_fanout` progress assertion is the stronger first-order evidence: at least
+one input is accepted, but the DUT produces no visible PKTOUT during the next
+4096 cycles. The 20,000-cycle stimulus timeout seen with `dep_chain` is a later
+terminal symptom. Waveform triage should identify the last accepted packet,
+the last legal output, and the cycle where backpressure or dependency wait
+becomes permanent. Prioritize stuck backpressure, dependency-result wakeup,
+scheduler grant, and pipeline valid/stall state.
+
+The earlier observation that bug10 fired the same unknown-control assertion as
+bug3 is not used as the evidence for this verdict. Preserve a clean bug10
+compile log with the reproduction so the result cannot be confused with a
+cached bug3 image.
+
+## DUT-BUG11: Lane-7 parallel output data mismatch
+
+### Reproduction
+
+| Field | Value |
+|---|---|
+| RTL | `bug11` |
+| Topology | Lane 7 |
+| Testcase | `parallel` |
+| Seed | Pending: copy from the failing simulation log |
+| First-failure time | 15500 |
+| First-failure cycle | 16 |
+| First failing packet | Sequence 28, lane 0 |
+| Failure | Expected and actual output data differ (`PKTOUT_DATA`) |
+
+### Verdict and next action
+
+The complete Bug RTL campaign with the `parallel` testcase detected only
+bug11. Sequence 28 is correctly assigned to lane 0 for a seven-lane topology
+(`28 % 7 == 0`), so the first observed failure is a data-path mismatch rather
+than an output-lane ordering failure. Bug11 is therefore classified as a
+functional DUT bug detected by the end-to-end scoreboard.
+
+Preserve the failing seed and expected/actual data values, then compare Golden
+and bug11 waveforms from the cycle where sequence 28 is accepted through cycle
+16. Prioritize per-lane buffer pointer wrap, pipeline valid/data alignment,
+and the seven-lane output data mux when identifying the internal root cause.
+
+## DUT-BUG13: Lane-4 latency/dependency output data mismatch
+
+### Reproduction
+
+| Field | Value |
+|---|---|
+| RTL | `bug13` |
+| Topology | Lane 4 |
+| Testcase | `latency` |
+| Seed | Pending: copy from the failing simulation log |
+| First-failure time | 128500 |
+| First-failure cycle | 129 |
+| First failing packet | Sequence 103, lane 3 |
+| Stimulus condition | Encoded latency 3 (four-cycle latency), dependency distance 1 |
+| Expected data | Pending: copy from the failing simulation log |
+| Actual data | Zero |
+| Failure | Expected and actual output data differ (`PKTOUT_DATA`) |
+
+### Verdict and next action
+
+Sequence 103 is correctly assigned to lane 3 in a four-lane topology
+(`103 % 4 == 3`). It is the fourth packet in a same-beat dependency chain:
+sequence 100 depends on 99, sequence 101 on 100, sequence 102 on 101, and
+sequence 103 on 102. The correct lane assignment and zero actual data classify
+bug13 as a functional data-path failure rather than an output-order failure.
+
+Preserve the failing seed and expected value, then trace sequence 103 from its
+dependency source through the latency-3 forwarding path. Check whether its
+correct result appears after cycle 129; a later appearance indicates early
+valid or pipeline data/valid misalignment, while no appearance points to a
+dropped dependency result or zero-selected dependency mux input.
 
 ## Verification-environment issues
 
